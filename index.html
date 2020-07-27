@@ -23,12 +23,19 @@
 </body>
 <script>
   function MineClear(map) {
+    this.game = true;
     this.div = map;
     this.map = [];
-    this.mine = 10;
+    this.mine = 1;
+    this.mineLook = "*"
+    this.flag = "🚩"
+    this.clickLattice = "#888"
+    this.mineAll = [];
+    this.flagAll = {};
     this.mapNum = { x: 10, y: 10 };
     this.initial(map);
     this.generatingmap();
+    this.gameOver = function () { };
   };
   MineClear.prototype.initial = function (div) {
     div.style.display = "flex"
@@ -38,7 +45,7 @@
     this.lattice = {
       w: this.width / this.mapNum.x,
       h: this.height / this.mapNum.y,
-      color: "#90f"
+      color: "#ccc"
     }
   }
   MineClear.prototype.generatingmap = function () {
@@ -52,7 +59,8 @@
           height: this.lattice.h + "px",
           backgroundColor: this.lattice.color,
           boxSizing: "border-box",
-          border: "2px solid #444",
+          border: "2px solid #555",
+          borderColor: "#eee #666 #666 #eee",
           flexShrink: 0,
           fontSize: this.lattice.w / 1.7 + "px",
           lineHeight: this.lattice.h + "px",
@@ -61,7 +69,10 @@
         let inof = {
           x: i, y: is, lattice,
           type: " ",
+          click: false,
           /*
+          0 空白
+          -1
           🚩
           
           */
@@ -76,21 +87,97 @@
     }
   }
   MineClear.prototype.click = function (event, inof, direction) {
-    console.log(event, inof, direction);
+    // console.log(event, inof, direction);
+    if (!this.game) return;
     if (direction == "left") {
-      this.hideDisplay(" ")
-    } else { this.hideDisplay() }
-
+      if (inof.click) return;
+      inof.click = true
+      event.target.innerText = inof.type
+      event.target.style.backgroundColor = this.clickLattice
+      if (inof.type == this.mineLook) {
+        this.game = false;
+        this.gameOver(false);
+      } else if (inof.type == " ") this.extend(inof);
+      this.gameIf();
+    }
+    if (direction == "right") {
+      if (event.target.innerText == "" && !inof.click) {
+        event.target.innerText = this.flag
+        this.flagAll[[inof.x, inof.y].join("-")] = inof
+        inof.click = true;
+      } else if (event.target.innerText == this.flag) {
+        event.target.innerText = " "
+        inof.click = false
+        delete this.flagAll[[inof.x, inof.y].join("-")]
+      }
+      this.gameIf();
+    }
+  }
+  MineClear.prototype.gameIf = function () {
+    let game = true;
+    this.flagAll
+    this.mineAll.forEach(i => {
+      if (i.lattice.innerText != this.flag) game = false
+    })
+    for (let i in this.flagAll) {
+      if (this.flagAll[i].type != this.mineLook) game = false;
+    }
+    this.map.forEach(i => i.forEach(i => {
+      if (!i.click) game = false
+    }))
+    if (game) this.gameOver(true);
+  }
+  MineClear.prototype.extend = function (inof) {
+    let arr = this.circle(inof);
+    arr.forEach(i => {
+      if (!i.click) {
+        i.click = true
+        i.lattice.innerText = i.type
+        i.lattice.style.backgroundColor = this.clickLattice
+        if (i.type == " ") this.extend(i);
+      }
+    })
   }
   MineClear.prototype.randomMine = function (mine = this.mine) {
     for (let i = 0; i < mine; i++) {
       let x = Math.floor(Math.random() * this.map.length)
       let y = Math.floor(Math.random() * this.map[x].length);
-      if (this.map[x][y].type == "*") { i-- };
-      this.map[x][y].type = "*";
-      this.map[x][y].lattice.innerText = "*"
+      if (this.map[x][y].type == this.mineLook) { i-- } else {
+        this.map[x][y].type = this.mineLook;
+        this.map[x][y].lattice.innerText = this.mineLook
+        this.mineAll.push(this.map[x][y]);
+      };
+
     }
     console.log(mine);
+  }
+  MineClear.prototype.circle = function (i) {
+    let arr = [];
+    if (this.map[i.x + 1]) {
+      arr.push(this.map[i.x + 1][i.y]);
+      if (this.map[i.x + 1][i.y + 1]) arr.push(this.map[i.x + 1][i.y + 1]);
+      if (this.map[i.x + 1][i.y - 1]) arr.push(this.map[i.x + 1][i.y - 1]);
+    }
+    if (this.map[i.x - 1]) {
+      arr.push(this.map[i.x - 1][i.y]);
+      if (this.map[i.x - 1][i.y + 1]) arr.push(this.map[i.x - 1][i.y + 1]);
+      if (this.map[i.x - 1][i.y - 1]) arr.push(this.map[i.x - 1][i.y - 1]);
+    }
+    if (this.map[i.x][i.y + 1]) arr.push(this.map[i.x][i.y + 1]);
+    if (this.map[i.x][i.y - 1]) arr.push(this.map[i.x][i.y - 1]);
+    return arr
+  }
+  MineClear.prototype.mineCircle = function () {
+    this.mineAll.forEach(i => {
+      let arr = this.circle(i);
+      arr.forEach(i => {
+        if (!i) console.log(i);
+        if (i.type == " ") i.type = 0;
+        if (i.type >= 0) i.type = Number(i.type) + 1
+        i.lattice.innerText = i.type
+      })
+
+    })
   }
   MineClear.prototype.hideDisplay = function (type) {
     this.map.forEach((i) => {
@@ -103,7 +190,12 @@
   }
   let mine = document.querySelector(".mine")
   let mines = new MineClear(mine);
-  mines.randomMine()
+  mines.randomMine();
+  mines.mineCircle();
+  mines.hideDisplay(" ")
+  mines.gameOver = function (game) {
+    console.log("游戏结束", game);
+  }
   console.log(mines);
 </script>
 
