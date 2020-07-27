@@ -20,22 +20,28 @@
   <div class="mine">
 
   </div>
+  <button onclick="mines.restart(mine);">重新开始</button>
 </body>
 <script>
-  function MineClear(map) {
+  function MineClear(map, mineNum = 2, mineMap = { x: 10, y: 10 }) {
     this.game = true;
     this.div = map;
     this.map = [];
-    this.mine = 1;
+    this.mine = mineNum;
     this.mineLook = "*"
     this.flag = "🚩"
     this.clickLattice = "#888"
     this.mineAll = [];
     this.flagAll = {};
-    this.mapNum = { x: 10, y: 10 };
+    this.mapNum = mineMap;
     this.initial(map);
     this.generatingmap();
     this.gameOver = function () { };
+    this.goGame = function () {
+      this.randomMine();
+      this.mineCircle();
+      this.hideDisplay(" ");
+    }
   };
   MineClear.prototype.initial = function (div) {
     div.style.display = "flex"
@@ -82,7 +88,7 @@
         lattice.addEventListener("contextmenu", event => { this.click(event, inof, "right"); event.preventDefault() })
 
         this.div.appendChild(lattice);
-        this.map[i].push(inof)
+        this.map[i].push(inof);
       }
     }
   }
@@ -97,6 +103,7 @@
       if (inof.type == this.mineLook) {
         this.game = false;
         this.gameOver(false);
+        this.hideDisplay()
       } else if (inof.type == " ") this.extend(inof);
       this.gameIf();
     }
@@ -125,7 +132,9 @@
     this.map.forEach(i => i.forEach(i => {
       if (!i.click) game = false
     }))
-    if (game) this.gameOver(true);
+    if (game) {
+      this.game = false; this.gameOver(true);
+    }
   }
   MineClear.prototype.extend = function (inof) {
     let arr = this.circle(inof);
@@ -179,6 +188,18 @@
 
     })
   }
+  MineClear.prototype.restart = function (mineNum = 2, mineMap = { x: 10, y: 10 }) {
+    this.map.forEach(i => i.forEach(i => {
+      i.type = " "; i.click = false;
+      i.lattice.innerText = ""
+      i.lattice.style.backgroundColor = "#ccc"
+    }));
+    this.mineAll = [];
+    this.flagAll = {};
+    this.game = true
+    this.goGame()
+    // return new MineClear(div, mineNum, mineMap);
+  }
   MineClear.prototype.hideDisplay = function (type) {
     this.map.forEach((i) => {
       i.forEach((lattice) => {
@@ -188,15 +209,14 @@
       })
     })
   }
+
   let mine = document.querySelector(".mine")
-  let mines = new MineClear(mine);
-  mines.randomMine();
-  mines.mineCircle();
-  mines.hideDisplay(" ")
+  let mines = new MineClear(mine, 2, { x: 10, y: 10 });
+  mines.goGame()
   mines.gameOver = function (game) {
     console.log("游戏结束", game);
-  }
-  console.log(mines);
+    if (game) { alert("游戏结束 胜利") } else alert("游戏结束 失败")
+  };
 </script>
 
 </html>
