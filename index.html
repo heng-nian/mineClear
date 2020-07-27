@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>扫雷</title>
+</head>
+<style>
+  .mine {
+    width: 500px;
+    height: 500px;
+    background-color: #09f;
+  }
+
+  .mine div {}
+</style>
+
+<body>
+  <div class="mine">
+
+  </div>
+</body>
+<script>
+  function MineClear(map) {
+    this.div = map;
+    this.map = [];
+    this.mine = 10;
+    this.mapNum = { x: 10, y: 10 };
+    this.initial(map);
+    this.generatingmap();
+  };
+  MineClear.prototype.initial = function (div) {
+    div.style.display = "flex"
+    div.style.flexWrap = "wrap";
+    this.height = div.offsetHeight
+    this.width = div.offsetWidth
+    this.lattice = {
+      w: this.width / this.mapNum.x,
+      h: this.height / this.mapNum.y,
+      color: "#90f"
+    }
+  }
+  MineClear.prototype.generatingmap = function () {
+    for (let i = 0; i < this.mapNum.x; i++) {
+      this.map.push([])
+      for (let is = 0; is < this.mapNum.y; is++) {
+        let lattice = document.createElement("div");
+
+        Object.assign(lattice.style, {
+          width: this.lattice.w + "px",
+          height: this.lattice.h + "px",
+          backgroundColor: this.lattice.color,
+          boxSizing: "border-box",
+          border: "2px solid #444",
+          flexShrink: 0,
+          fontSize: this.lattice.w / 1.7 + "px",
+          lineHeight: this.lattice.h + "px",
+          textAlign: "center",
+        })
+        let inof = {
+          x: i, y: is, lattice,
+          type: " ",
+          /*
+          🚩
+          
+          */
+        }
+        lattice.innerText = inof.type
+        lattice.addEventListener("click", event => this.click(event, inof, "left"))
+        lattice.addEventListener("contextmenu", event => { this.click(event, inof, "right"); event.preventDefault() })
+
+        this.div.appendChild(lattice);
+        this.map[i].push(inof)
+      }
+    }
+  }
+  MineClear.prototype.click = function (event, inof, direction) {
+    console.log(event, inof, direction);
+    if (direction == "left") {
+      this.hideDisplay(" ")
+    } else { this.hideDisplay() }
+
+  }
+  MineClear.prototype.randomMine = function (mine = this.mine) {
+    for (let i = 0; i < mine; i++) {
+      let x = Math.floor(Math.random() * this.map.length)
+      let y = Math.floor(Math.random() * this.map[x].length);
+      if (this.map[x][y].type == "*") { i-- };
+      this.map[x][y].type = "*";
+      this.map[x][y].lattice.innerText = "*"
+    }
+    console.log(mine);
+  }
+  MineClear.prototype.hideDisplay = function (type) {
+    this.map.forEach((i) => {
+      i.forEach((lattice) => {
+        if (type) {
+          lattice.lattice.innerText = type
+        } else lattice.lattice.innerText = lattice.type
+      })
+    })
+  }
+  let mine = document.querySelector(".mine")
+  let mines = new MineClear(mine);
+  mines.randomMine()
+  console.log(mines);
+</script>
+
+</html>
